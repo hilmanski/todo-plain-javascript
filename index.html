@@ -7,25 +7,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container is-fluid">
         <section class="hero is-info">
             <div class="hero-body">
                 <div class="container">
                     <h1 class="title"> Todo </h1>
-                    <h2 class="subtitle"> Mau bikin Apa? </h2>
+                    <h2 class="subtitle"> To Do Today </h2>
                 </div>
             </div>
         </section>
     </div>
 
-      <div class="container">
-        <form action="#">
-            <input type="text" id="new_text"> 
-            <button onclick="add()">Add</button>
+    <div class="container is-fluid"> 
+        <br>
+        <form action="#" class="columns">
+            <div class="column">
+                <input class="input" type="text" id="new_text"> 
+            </div>
+
+            <div class="column">
+                <button class="button is-primary" onclick="add()">Add</button>
+            </div>
         </form>
 
-        <ul id="todo">
-        </ul>
+        <ul id="todo"></ul>
     </div>   
 
     <style>
@@ -33,29 +38,77 @@
     </style>
 
     <script>
-        const todo = document.getElementById('todo')
+        let todos = {}
+        const STORAGE_TODO = "STORAGE_TODO"
+        const todoBox = document.getElementById('todo')
 
+        //======================================================
+        //=====  LOCAL STORAGE =================================
+        //======================================================
+
+        //Check if localstorage API is available
+        if (typeof(Storage) !== "undefined")
+            console.log("local storage available");
+        else 
+            console.log("Oops. you data will gone after page reload");
+
+        //read localStorage on first Load
+        if(todoFromLocal = localStorage.getItem(STORAGE_TODO)) {
+            todos = JSON.parse(todoFromLocal)
+            
+            for(let key in todos)
+                createList(key, todos[key])
+        }
+
+
+        function syncLocalStorage(activity, item, status = false) {
+            switch(activity) {
+                case 'ADD':
+                case 'UPDATE':
+                    todos[item] = status
+                    break;
+                case 'DELETE':
+                    delete todos[item]
+                    break;
+                default:
+                    break;    
+            }
+
+            localStorage.setItem(STORAGE_TODO, JSON.stringify(todos))
+            return
+        }
+
+        //======================================================
+        //=====  TODO FUNCTIONS ================================
+        //======================================================
         function add() {
             let newText = document.getElementById('new_text')
-
-            let newTodo = "<li> <span onclick='toggle(this)'>" + newText.value + "</span>" +   
-                                "<span onclick='removeItem(this)'>[x]</span>" +
-                                "</li>"
-
-            todo.insertAdjacentHTML('afterbegin', newTodo);
-            
-            //refresh
+            createList(newText.value)
+            syncLocalStorage('ADD', newText.value)    
             newText.value = ''
+        }
+
+        function createList(text, status = false) {
+            let isDone = (status) ? 'done' : ''
+
+            let newTodo = `<li> 
+                            <span class='${isDone}' onclick='toggle(this)'>${text}</span>
+                            <span onclick='removeItem(this)'>[x]</span>
+                          </li>`
+
+            todoBox.insertAdjacentHTML('afterbegin', newTodo);
         }
 
         //Toggle
         function toggle(el) {
-            el.classList.toggle('done')
+            let status = el.classList.toggle('done')
+            syncLocalStorage('UPDATE', el.innerText, status)    
         }
 
         //Delete
         function removeItem(el) {
             el.parentElement.remove()
+            syncLocalStorage('DELETE', el.previousElementSibling.innerText.trim())    
         }
 
     </script>
